@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据操作流程指南</title>
+    <style>
+        /* 修改body布局 */
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+            display: flex;
+            justify-content: center; /* 使整体居中 */
+            background-color: #f0f0f0; /* 添加背景色以显示边框效果 */
+        }
+        /* 修改整体内容容器 */
+        .wrapper {
+            display: flex;
+            max-width: 1200px; /* 设置最大宽度 */
+            width: 100%;
+            padding: 0 20px; /* 两侧留白 */
+        }
+        /* 修改侧边栏 */
+        .sidebar {
+            width: 470px; /* 固定宽度 */
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            margin-right: 20px;
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+            flex-shrink: 0; /* 防止被压缩 */
+            box-shadow: 0 0 5px rgba(0,0,0,0.1); /* 添加阴影增强层次 */
+        }
+        .sidebar h3 {
+            color: #2c3e50;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .sidebar ol {
+            padding-left: 20px;
+        }
+        .sidebar li {
+            margin-bottom: 8px;
+        }
+        .sidebar .note {
+            background-color: #fffde7;
+            padding: 10px;
+            border-left: 4px solid #ffd600;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        /* 修改主内容区 */
+        .container {
+            flex: 1; /* 占满剩余空间 */
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+			margin-bottom: 60px; /* 新增：给底部固定栏留出空间 */
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h3 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .intro-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .intro-section h2 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #3498db;
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .result h2 {
+            color: #2c3e50;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        .result ol {
+            padding-left: 20px;
+        }
+        .result li {
+            margin-bottom: 10px;
+        }
+        .note {
+            background-color: #fffde7;
+            padding: 10px;
+            border-left: 4px solid #ffd600;
+            margin-top: 15px;
+        }
+		/* 底部固定栏样式 */
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #f5f5f5;
+            padding: 10px 20px;
+            border-top: 1px solid #ddd;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+        
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* 调整主容器底部边距防止内容被遮挡 */
+        .container {
+            margin-bottom: 60px; /* 给底部固定栏留出空间 */
+        }
+		/* 图片放大效果样式 */
+        .zoomable-image {
+          cursor: zoom-in;
+          transition: transform 0.3s;
+        }
+        
+        .image-modal {
+          position: relative;
+          display: inline-block;
+        }
+        
+        /* 放大后的样式 */
+        .zoomable-image.zoomed {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%) scale(1.5);
+          z-index: 1000;
+          cursor: zoom-out;
+          max-width: 80%;
+          max-height: 80%;
+          box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        }
+        
+        /* 遮罩层 */
+        .overlay {
+          display: none;
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0,0,0,0.7);
+          z-index: 999;
+        }
+		/* 普通文本样式的链接 */
+        .footer-content a.plain-link,
+        .footer-content a.plain-link:link,
+        .footer-content a.plain-link:visited,
+        .footer-content a.plain-link:hover,
+        .footer-content a.plain-link:active {
+            color: inherit; /* 继承父元素颜色 */
+            text-decoration: none; /* 无下划线 */
+            cursor: pointer; /* 保持指针样式 */
+            font-weight: normal; /* 正常字体粗细 */
+            outline: none; /* 移除点击时的轮廓线 */
+        }
+        
+        /* 如果需要完全禁用点击后的状态变化 */
+        .footer-content a.plain-link:focus {
+            outline: none;
+        }
+    </style>
+</head>
+<footer class="footer">
+    <div class="footer-content">
+        <span>版本信息：v1.1</span>
+        <span>更新时间：2025-07-15 19:39:04</span>
+        <span>作者：乐信大数据数仓组</span>
+		<span><a href="https://ledocs.oa.fenqile.com/doc/3355a7a30f69ffc810dbeb83b683f44d" target="_blank" class="plain-link">原文档链接</a></span>
+    </div>
+</footer>
+<body>
+    <div class="sidebar">
+        <h3>备份规范</h3>
+        <ol>
+            <li>备份库名：dp_fk_tmp</li>
+            <li>备份表/视图名：[正式表/视图名]_[操作人名]_[日期]_[版本号]</li>
+        </ol>
+        <p>示例：lx_dws.dws_fql_xiaojin_user_detail_df的备份库表名：<br>dp_fk_tmp.dws_fql_xiaojin_user_detail_df_enzodai_20250626_v1</p>
+        <div class="note">
+            <strong>说明：</strong><br>
+            1、备份表主要是针对HIVE表和SR表<br>
+            2、备份视图主要是针对HIVE视图和SR视图（含普通视图和物化视图）
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>数据操作流程指南</h1>
+        <div class="intro-section">
+            <h2>一、目的与范围</h2>
+            <p><strong>目的：</strong>规范数据仓库各类变更操作流程，确保数据的一致性、准确性和完整性。</p>
+            <p><strong>范围：</strong>适用于所有数据仓库DDL/DML操作，包括表结构变更、数据操作和特殊场景处理。</p>
+            
+            <h2>二、原则</h2>
+            <p>数仓DDL/DML操作三步曲：备份、操作、验证（以上所有步骤必须当天完成）。</p>
+        </div>
+        
+        <div class="form-group">
+            <label for="scenario">场景选择</label>
+            <select id="scenario" onchange="updateOptions()">
+                <option value="">请选择场景</option>
+                <option value="新增字段">新增字段</option>
+                <option value="视图变更">视图变更</option>
+                <option value="删表重建">删表重建</option>
+                <option value="数据重采">数据重采</option>
+                <option value="任务更新">任务更新</option>
+                <option value="数据集变更">数据集变更</option>
+                <option value="数据填报变更">数据填报变更</option>
+            </select>
+        </div>
+        
+        <div id="dataSourceGroup" class="form-group" style="display: none;">
+            <label for="dataSource">数据源</label>
+            <select id="dataSource" onchange="showResult()">
+                <option value="">请选择数据源</option>
+                <option value="Hive">Hive</option>
+                <option value="StarRocks">StarRocks</option>
+                <option value="MySQL">MySQL</option>
+            </select>
+        </div>
+        
+        <div id="hiveTypeGroup" class="form-group" style="display: none;">
+            <label for="hiveType">Hive表类型</label>
+            <select id="hiveType" onchange="showResult()">
+                <option value="">请选择表类型</option>
+                <option value="分区表&汇总表">分区表&汇总表</option>
+                <option value="分区表&明细表">分区表&明细表</option>
+                <option value="非分区表&汇总表">非分区表&汇总表</option>
+                <option value="非分区表&明细表">非分区表&明细表</option>
+                <option value="实时表">实时表</option>
+            </select>
+        </div>
+        
+        <div id="srTypeGroup" class="form-group" style="display: none;">
+            <label for="srType">StarRocks表类型</label>
+            <select id="srType" onchange="showResult()">
+                <option value="">请选择表类型</option>
+                <option value="离线表">离线表</option>
+                <option value="实时表">实时表</option>
+            </select>
+        </div>
+        
+        <div id="recollectTypeGroup" class="form-group" style="display: none;">
+            <label for="recollectType">数据重采类型</label>
+            <select id="recollectType" onchange="showResult()">
+                <option value="">请选择重采类型</option>
+                <option value="上线任务，业务反馈数据有部分缺失">上线任务，业务反馈数据有部分缺失</option>
+                <option value="已下线任务重新上线，阿拉丁--数据接入配置编辑页面有限制禁止全量采集-MySQL数据已冷备">已下线任务重新上线，阿拉丁--数据接入配置编辑页面有限制禁止全量采集-MySQL数据已冷备</option>
+                <option value="已下线任务重新上线，阿拉丁--数据接入配置编辑页面未限制禁止全量采集">已下线任务重新上线，阿拉丁--数据接入配置编辑页面未限制禁止全量采集</option>
+            </select>
+        </div>
+        
+        <div id="taskTypeGroup" class="form-group" style="display: none;">
+            <label for="taskType">任务类型</label>
+            <select id="taskType" onchange="showResult()">
+                <option value="">请选择任务类型</option>
+                <option value="普通任务更新">普通任务更新</option>
+                <option value="高优任务更新">高优任务更新</option>
+                <option value="即席平台数据回溯">即席平台数据回溯</option>
+            </select>
+        </div>
+        
+        <div id="result" class="result">
+            <h2 id="resultTitle">操作流程</h2>
+            <div id="resultContent"></div>
+        </div>
+    </div>
+
+    <script>
+        function updateOptions() {
+            const scenario = document.getElementById('scenario').value;
+            
+            // 隐藏所有二级选项
+            document.getElementById('dataSourceGroup').style.display = 'none';
+            document.getElementById('hiveTypeGroup').style.display = 'none';
+            document.getElementById('srTypeGroup').style.display = 'none';
+            document.getElementById('recollectTypeGroup').style.display = 'none';
+            document.getElementById('taskTypeGroup').style.display = 'none';
+            
+            // 重置所有二级选项
+            document.getElementById('dataSource').value = '';
+            document.getElementById('hiveType').value = '';
+            document.getElementById('srType').value = '';
+            document.getElementById('recollectType').value = '';
+            document.getElementById('taskType').value = '';
+            
+            // 根据一级选项显示相应的二级选项
+            if (scenario === '新增字段') {
+                document.getElementById('dataSourceGroup').style.display = 'block';
+            } else if (scenario === '数据重采') {
+                document.getElementById('recollectTypeGroup').style.display = 'block';
+            } else if (scenario === '任务更新') {
+                document.getElementById('taskTypeGroup').style.display = 'block';
+            } else if (scenario === '视图变更' || scenario === '删表重建' || 
+                      scenario === '数据集变更' || scenario === '数据填报变更') {
+                // 直接显示结果，不需要二级选项
+                showResult();
+                return; // 提前返回，避免执行下面的hide result
+            }
+            
+            // 隐藏结果区域
+            document.getElementById('result').style.display = 'none';
+        }
+        
+        function showResult() {
+            const scenario = document.getElementById('scenario').value;
+            const dataSource = document.getElementById('dataSource').value;
+            const hiveType = document.getElementById('hiveType').value;
+            const srType = document.getElementById('srType').value;
+            const recollectType = document.getElementById('recollectType').value;
+            const taskType = document.getElementById('taskType').value;
+            
+            // 如果选择了"新增字段"且数据源是Hive或StarRocks，显示表类型选项
+            if (scenario === '新增字段' && dataSource === 'Hive') {
+                document.getElementById('hiveTypeGroup').style.display = 'block';
+                document.getElementById('srTypeGroup').style.display = 'none';
+                if (!hiveType) {
+                    document.getElementById('result').style.display = 'none';
+                    return;
+                }
+            } else if (scenario === '新增字段' && dataSource === 'StarRocks') {
+                document.getElementById('srTypeGroup').style.display = 'block';
+                document.getElementById('hiveTypeGroup').style.display = 'none';
+                if (!srType) {
+                    document.getElementById('result').style.display = 'none';
+                    return;
+                }
+            } else if (scenario === '新增字段' && dataSource === 'MySQL') {
+                document.getElementById('hiveTypeGroup').style.display = 'none';
+                document.getElementById('srTypeGroup').style.display = 'none';
+            }
+            
+            // 确定是否显示结果
+            let showResultFlag = false;
+            let title = '';
+            let content = '';
+            
+            if (scenario === '新增字段') {
+                if (dataSource === 'Hive' && hiveType) {
+                    showResultFlag = true;
+                    title = `Hive ${hiveType} 新增字段操作流程`;
+                    
+                    if (hiveType === '分区表&汇总表') {
+                        content = `
+                            <ol>
+                                <li>备份HIVE表指定分区数据（分区区间以DS任务写入周期为准）</li>
+                                <li>在正式表上执行DDL语句添加字段</li>
+                                <li>修改DS任务逻辑，运行任务</li>
+                                <li>验证正式表记录数，记录数不小于备份表记录数</li>
+                                <li>验证正式表字段准确性，包括字段顺序和字段值等</li>
+                            </ol>
+                            <div class="note">
+                                <strong>说明：</strong>禁止删除字段；新增字段只能加在表最后
+                            </div>
+                        `;
+                    } else if (hiveType === '分区表&明细表') {
+                        content = `
+                            <ol>
+                                <li>备份HIVE表指定分区数据（分区区间以DS任务写入周期为准）</li>
+                                <li>在正式表上执行DDL语句添加字段</li>
+                                <li>修改DS任务逻辑，运行任务</li>
+                                <li>验证正式表记录数，与备份表记录数要保持一致</li>
+                                <li>验证正式表字段准确性，包括字段顺序和字段值等</li>
+                            </ol>
+                            <div class="note">
+                                <strong>说明：</strong>禁止删除字段；新增字段只能加在表最后
+                            </div>
+                        `;
+                    } else if (hiveType === '非分区表&汇总表') {
+                        content = `
+                            <ol>
+                                <li>备份HIVE表全表数据</li>
+                                <li>在正式表上执行DDL语句添加字段</li>
+                                <li>修改DS任务逻辑，运行任务</li>
+                                <li>验证正式表记录数，记录数不小于备份表记录数</li>
+                                <li>验证正式表字段准确性，包括字段顺序和字段值等</li>
+                            </ol>
+                            <div class="note">
+                                <strong>说明：</strong>禁止删除字段；新增字段只能加在表最后
+                            </div>
+                        `;
+                    } else if (hiveType === '非分区表&明细表') {
+                        content = `
+                            <ol>
+                                <li>备份HIVE表全表数据</li>
+                                <li>在正式表上执行DDL语句添加字段</li>
+                                <li>修改DS任务逻辑，运行任务</li>
+                                <li>验证正式表记录数，与备份表记录数要保持一致</li>
+                                <li>验证正式表字段准确性，包括字段顺序和字段值等</li>
+                            </ol>
+                            <div class="note">
+                                <strong>说明：</strong>禁止删除字段；新增字段只能加在表最后
+                            </div>
+                        `;
+                    } else if (hiveType === '实时表') {
+                        content = `
+                            <div class="note">
+                                <strong>说明：</strong>正常流程下，实时表字段会在业务方提交mysql加字段申请后自动增加，可能出现未加上的情况，需要手工添加
+                            </div>
+                            <ol>
+                                <li>拉起群聊，相关人员（架构同事（当前为jiliangxu）,billylin,yezeng）</li>
+                                <li>咨询jiliang未加字段原因，可让jiliang手工添加，共同观察数据是否正常写入</li>
+                                <li>若数据未正常写入，架构同事跟进并处理：咨询billyin原因，如字段首字母大小写原因或者元数据异常，备份全表并删表重建，并联系billylin重启消费位点，重新消费当日数据，并将前两日数据insertoverwrite写入hive实时表，同步观察消费情况</li>
+                                <li>共同验证正式表记录数，前两日数据与备份表记录数要保持一致，当日数据要多于备份表数据</li>
+                                <li>共同验证实时表字段准确性，包括字段顺序和字段值等</li>
+                            </ol>
+                        `;
+                    }
+                } else if (dataSource === 'StarRocks' && srType) {
+                    showResultFlag = true;
+                    title = `StarRocks ${srType} 新增字段操作流程`;
+                    
+                    if (srType === '离线表') {
+                        content = `
+                            <ol>
+                                <li>确保STARROCKS表有相同表结构和数据的HIVE表</li>
+                                <li>备份SR表</li>
+                                <li>在正式表上执行DDL语句添加字段</li>
+                                <li>修改DS任务逻辑，运行任务</li>
+                                <li>验证正式表记录数</li>
+                                <li>验证正式表字段准确性，包括字段顺序和字段值等</li>
+                            </ol>
+                        `;
+                    } else if (srType === '实时表') {
+                        content = `
+                            <ol>
+                                <li>查看kafka消息，确保上游数据源已经新增了字段</li>
+                                <li>在正式表上执行DDL语句添加字段（不手动指定字段顺序，添加到末尾）</li>
+                                <li>修改flink任务或DS任务逻辑，重新启动任务</li>
+                                <li>验证正式表字段准确性，包括字段顺序和字段值等</li>
+                            </ol>
+                        `;
+                    }
+                } else if (dataSource === 'MySQL') {
+                    showResultFlag = true;
+                    title = `MySQL表新增字段操作流程`;
+                    content = `
+                        <ol>
+                            <li>确保MYSQL表有相同表结构和数据的HIVE表</li>
+                            <li>在乐信云申请执行DDL语句添加字段</li>
+                            <li>修改DS任务逻辑，运行任务</li>
+                            <li>验证正式表记录数，与HIVE表记录数要保持一致</li>
+                            <li>验证正式表字段准确性，包括字段顺序和字段值等</li>
+                        </ol>
+                    `;
+                }
+            } else if (scenario === '视图变更') {
+                showResultFlag = true;
+                title = `Hive/StarRocks视图变更操作流程`;
+                content = `
+                    <ol>
+                        <li>线上备份现有视图逻辑</li>
+                        <li>按照新逻辑新增线上临时视图</li>
+                        <li>验证临时视图记录数和字段值</li>
+                        <li>按照新逻辑修改线上正式视图</li>
+                        <li>验证正式视图记录数和字段值</li>
+                    </ol>
+                    <div class="note">
+                        <strong>说明：</strong>禁止修改视图现有字段名和顺序
+                    </div>
+                `;
+            } else if (scenario === '删表重建') {
+                showResultFlag = true;
+                title = `删表重建操作流程`;
+                content = `
+                    <ol>
+                        <li>备份全表</li>
+                        <li>创建临时表并写入新数据</li>
+                        <li>验证临时表记录数和字段值</li>
+                        <li>删除正式表并写入新数据</li>
+                        <li>验证正式表记录数和字段值</li>
+                    </ol>
+                    <div class="note">
+                        <strong>说明：</strong>删表重建的场景包括：<br>
+                        1. 表结构需要大规模变更：当需要对表进行多个结构性变更，且这些变更通过常规的ALTER语句难以实现或可能导致性能问题时。<br>
+                        2. 数据全量刷新：当表数据需要完全清除并重新导入时，特别是在全量数据迁移或数据质量问题修复的场景下。<br>
+                        3. 物理存储优化：需要更改表的物理存储特性，如分桶策略、压缩方式或存储格式转换(如从TEXT转为ORC/Parquet)。<br>
+                        4. 表迁移：当需要将表迁移到新的存储系统或调整表的位置时。<br>
+                        5. 性能优化：当表因长期使用导致碎片化严重，影响查询性能时，通过重建表可以优化物理存储结构。
+                    </div>
+                `;
+            } else if (scenario === '数据重采' && recollectType) {
+                showResultFlag = true;
+                title = `数据重采操作流程 (${recollectType})`;
+                
+                if (recollectType === '上线任务，业务反馈数据有部分缺失') {
+                    content = `
+                        <ol>
+                            <li>备份全表</li>
+                            <li>全量重采数据至临时表</li>
+                            <li>验证临时表记录数和字段值</li>
+                            <li>将临时表数据写入正式表</li>
+                            <li>验证正式表记录数和字段值</li>
+                        </ol>
+                    `;
+                } else if (recollectType === '已下线任务重新上线，阿拉丁--数据接入配置编辑页面有限制禁止全量采集-MySQL数据已冷备') {
+                    content = `
+                        <ol>
+                            <li>备份全表</li>
+                            <li>全量重采数据至临时表</li>
+                            <li>验证临时表记录数和字段值</li>
+                            <li>将临时表数据按snap合并逻辑更新入正式表</li>
+                            <li>验证正式表记录数和字段值</li>
+                        </ol>
+                        <div class="image-modal" style="margin: 20px 0; text-align: center;">
+                            <img src="https://m.360buyimg.com/i/jfs/t1/306430/24/18117/79360/68763644F95952b2e/8b0011fdeb4673a7.png" 
+                                 alt="数据重采流程图" 
+								 class="zoomable-image" 
+                                 style="max-width: 100%; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        </div>
+                        <div class="note">
+                            <strong>说明：</strong>代表mysql数据已冷备
+                        </div>
+                    `;
+                } else if (recollectType === '已下线任务重新上线，阿拉丁--数据接入配置编辑页面未限制禁止全量采集') {
+                    content = `
+                        <ol>
+                            <li>删除接入表</li>
+                            <li>ds任务正常调起（第一次创建表会自动获取mysql最新表结构，且全表采集）</li>
+                            <li>验证正式表记录数和字段值</li>
+                        </ol>
+                    `;
+                }
+            } else if (scenario === '任务更新' && taskType) {
+                showResultFlag = true;
+                title = `${taskType}操作流程`;
+                
+                if (taskType === '普通任务更新') {
+                    content = `
+                        <ol>
+                            <li>根据表分区情况备份目标表</li>
+                            <li>将优化/变更后的数据写入临时表</li>
+                            <li>验证临时表记录数和字段值</li>
+                            <li>修改DS线上任务</li>
+                            <li>验证目标表记录数和字段值</li>
+                        </ol>
+                    `;
+                } else if (taskType === '高优任务更新') {
+                    content = `
+                        <ol>
+                            <li>根据表分区情况备份目标表</li>
+                            <li>修改DS线上任务，生成沙箱任务</li>
+                            <li>验证沙箱表记录数和字段值</li>
+                            <li>运行DS线上任务</li>
+                            <li>验证目标表记录数和字段值</li>
+                        </ol>
+                    `;
+                } else if (taskType === '即席平台数据回溯') {
+                    content = `
+                        <div class="note">
+                            <strong>说明：</strong>高危操作，建议DS操作(确保传入日期参数为{pN}，非now()/current_date())
+                        </div>
+                        <ol>
+                            <li>备份指定分区数据</li>
+                            <li>回溯目标表数据</li>
+                            <li>验证目标表记录数和字段值</li>
+                        </ol>
+                    `;
+                }
+            } else if (scenario === '数据集变更') {
+                showResultFlag = true;
+                title = `数据集变更操作流程`;
+                content = `
+                    <ol>
+                        <li>备份数据集</li>
+                        <li>修改线上数据集</li>
+                        <li>验证数据集的准确性</li>
+                    </ol>
+                `;
+            } else if (scenario === '数据填报变更') {
+                showResultFlag = true;
+                title = `数据填报变更操作流程`;
+                content = `
+                    <ol>
+                        <li>备份数据填报对应的底表(接入的HIVE表)</li>
+                        <li>修改数据填报字段或数据</li>
+                        <li>验证数据填报的准确性</li>
+                    </ol>
+                    <div class="note">
+                        <strong>说明：</strong><br>
+                        1. 数据填报对应的底表必须同步到hive备份<br>
+                        2. 数据填报的数据表关联必须做发散校验<br>
+                        3. 高优数据填报修改走审批流程<br>
+                        4. 关键字不能作为数据填报字段名称<br>
+                        5. 注意主键或索引的新增<br>
+                        6. 数据填报的使用指引：<a href="https://ledocs.oa.fenqile.com/doc/ef5e34ab102d4e816931d842c0edd4ca" target="_blank">点击查看</a>
+                    </div>
+                `;
+            }
+            
+            if (showResultFlag) {
+                document.getElementById('resultTitle').textContent = title;
+                document.getElementById('resultContent').innerHTML = content;
+                document.getElementById('result').style.display = 'block';
+            } else {
+                document.getElementById('result').style.display = 'none';
+            }
+        }
+		
+		
+        // 图片点击放大。
+        document.addEventListener('DOMContentLoaded', function() {
+        // 创建遮罩层（如果不存在）
+        if (!document.querySelector('.overlay')) {
+          const overlay = document.createElement('div');
+          overlay.className = 'overlay';
+          document.body.appendChild(overlay);
+        }
+        
+        // 图片点击事件（使用事件委托更可靠）
+        document.body.addEventListener('click', function(e) {
+          if (e.target.classList.contains('zoomable-image')) {
+            const img = e.target;
+            const overlay = document.querySelector('.overlay');
+        
+            if (img.classList.contains('zoomed')) {
+              // 缩小
+              img.classList.remove('zoomed');
+              overlay.style.display = 'none';
+            } else {
+              // 放大
+              img.classList.add('zoomed');
+              overlay.style.display = 'block';
+              // 确保图片在视图中
+              img.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }
+        
+          // 点击遮罩层关闭
+          if (e.target.classList.contains('overlay')) {
+            document.querySelectorAll('.zoomable-image.zoomed').forEach(img => {
+              img.classList.remove('zoomed');
+            });
+            e.target.style.display = 'none';
+          }
+        });
+        });
+    </script>
+</body>
+</html>
